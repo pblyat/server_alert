@@ -21,7 +21,11 @@ def saveids():
 def getdata():
     global ids
     try:
-        response = requests.get(mmhome)
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
+            'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7',
+        }
+        response = requests.get(mmhome, headers=headers, timeout=30)
         response.raise_for_status()
         html_doc = response.text
         if response.status_code != 200:
