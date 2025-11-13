@@ -1,0 +1,103 @@
+import requests 
+from bs4 import BeautifulSoup
+import json
+import os
+
+webhook = '' #Discord webhook 주소
+#webhook = os.environ.get('DISCORD_WEBHOOK') #Github Actions를 위한 변수, 로컬에서 사용시 이 라인은 지울것
+mmhome = 'https://mabinogimobile.nexon.com/News/Notice?headlineId=0'
+BASE_DETAIL_URL = "https://mabinogimobile.nexon.com/News/Notice/"
+savefile = r'alert_log.txt'
+ids = ''
+
+with open(savefile, 'r', encoding='utf-8') as f:
+    ids = f.read().strip()
+
+def saveids():
+    global ids
+    with open(savefile, 'w', encoding='utf-8') as f:
+        f.write(ids)
+
+def getdata():
+    global ids
+    try:
+        response = requests.get(mmhome)
+        response.raise_for_status()
+        html_doc = response.text
+    except requests.exceptions.RequestException as e:
+        print(f"웹페이지를 가져오는 중 오류 발생: {e}")
+        return None
+
+    soup = BeautifulSoup(html_doc, 'html.parser')
+
+    wlist = soup.select_one("#mabinogim > div.news.board_list.container > section.normal_list_wrap > div.list_area")
+
+    titletags = wlist.find_all('a', class_='title')
+
+    if titletags:
+        rst = []
+        for i, tag in enumerate(titletags, 1):
+            
+            title = tag.get_text(strip=True)
+
+            #점검 공지만 필터
+            if title.find("점검") == -1:
+                continue
+
+            #최근에 올라온 공지만 필터
+            if tag['class'] != 'title new':
+                continue
+            
+            list_item = tag.find_parent('li')
+            thread_id = list_item.get('data-threadid') if list_item else None
+            if ids.find(thread_id) != -1:
+                continue
+
+            turl = ""
+            if thread_id:
+                turl = f"{BASE_DETAIL_URL}{thread_id}"
+
+            print(f"--- {i} ---")
+            print(f"제목: {title}")
+            print(f"링크: {turl}")
+            rst.append({'title': title, 'url': turl})
+
+            ids += f"{thread_id}\n"
+        print("--------------------------------------------------")
+        return rst
+    else:
+        print("페이지에서 제목 태그를 찾을 수 없습니다.")
+
+
+def sendwebhook(datas):
+    if datas is None or len(datas) == 0:
+        return
+    
+    embeds = []
+    for item in datas[:5]:
+        embeds.append({
+            "title": item['title'],
+            "url": item['url'],
+            "color": 3447003,
+        })
+
+    payload = {
+        "username": "Test",
+        "content": f"📢 **점검 공지를 감지했습니다.** 자세한 내용은 아래를 확인하세요.",
+        "embeds": embeds
+    }
+    
+    headers = {
+        "Content-Type": "application/json"
+    }
+    
+    try:
+        response = requests.post(webhook, data=json.dumps(payload), headers=headers)
+        response.raise_for_status()
+        print("Discord 웹훅 전송됨")
+        saveids()
+    except requests.exceptions.RequestException as e:
+        print(f"Discord 웹훅 전송 실패: {e}")
+        print(f"응답 상태 코드: {response.status_code if 'response' in locals() else 'N/A'}")
+
+sendwebhook(getdata())
