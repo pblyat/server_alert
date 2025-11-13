@@ -24,7 +24,7 @@ jobs:
       - name: Execute checkserver.py script
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
-        run: python runner.py
+        run: python checkserver.py
         
       - name: Commit and push alert log
         run: |
