@@ -1,0 +1,32 @@
+name: Server Checker
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+jobs:
+  run-checker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Install dependencies
+        run: pip install requests beautifulsoup4
+      - name: Execute checkserver.py script
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+        run: python checkserver.py
+      - name: Commit and push alert log
+        run: |
+          if git diff --quiet ./alert_log.txt; then
+              echo "No changes in alert log. Skipping commit."
+          else
+              git config user.name "GitHub Actions Bot"
+              git config user.email "actions@github.com"
+              git add ./alert_log.txt
+              git commit -m "chore: Update server alert log"
+              git push
+          fi
