@@ -3,9 +3,9 @@ from bs4 import BeautifulSoup
 import json
 import os
 
-webhook = '' #Discord webhook 주소
+#webhook = '' #Discord webhook 주소
 webhook = os.environ.get('DISCORD_WEBHOOK') #Github Actions를 위한 변수, 로컬에서 사용시 이 라인은 지울것
-mmhome = 'https://mabinogimobile.nexon.com/News/Notice?headlineId=0'
+mmhome = 'https://mabinogimobile.nexon.com/News/notice/GetList'
 BASE_DETAIL_URL = "https://mabinogimobile.nexon.com/News/Notice/"
 savefile = r'alert_log.txt'
 ids = ''
@@ -22,11 +22,13 @@ def getdata():
     global ids
     try:
         headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Safari/537.36',
             'Accept-Language': 'ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7',
-            'X-Timezone': 'Asia/Seoul'
+            'X-Timezone': 'Asia/Seoul',
+            'content-type': 'multipart/form-data; boundary=----WebKitFormBoundarylwJbu0U0BHhimMan'
         }
-        response = requests.get(mmhome, headers=headers, timeout=30)
+        data = '------WebKitFormBoundarylwJbu0U0BHhimMan\nContent-Disposition: form-data; name="headlineId"\n\n\n------WebKitFormBoundarylwJbu0U0BHhimMan\nContent-Disposition: form-data; name="directionType"\n\nDEFAULT\n------WebKitFormBoundarylwJbu0U0BHhimMan\nContent-Disposition: form-data; name="pageno"\n\n1\n------WebKitFormBoundarylwJbu0U0BHhimMan--'
+        response = requests.post(mmhome, headers=headers, timeout=30, data=data)
         response.raise_for_status()
         html_doc = response.text
         if response.status_code != 200:
@@ -36,9 +38,7 @@ def getdata():
         print(f"웹페이지를 가져오는 중 오류 발생: {e}")
         return None
 
-    soup = BeautifulSoup(html_doc, 'html.parser')
-
-    wlist = soup.select_one("#mabinogim > div.news.board_list.container > section.normal_list_wrap > div.list_area")
+    wlist = BeautifulSoup(html_doc, 'html.parser')
 
     if not wlist:
         print("ERROR: 웹페이지 파싱 중 오류 발생")
@@ -63,6 +63,8 @@ def getdata():
             
             list_item = tag.find_parent('li')
             thread_id = list_item.get('data-threadid') if list_item else None
+            if not thread_id:
+                continue
             if ids.find(thread_id) != -1:
                 continue
 
