@@ -24,6 +24,9 @@ def getdata():
         response = requests.get(mmhome)
         response.raise_for_status()
         html_doc = response.text
+        if response.status_code != 200:
+            print(f"웹페이지를 가져오는 중 오류 발생: 상태 코드 {response.status_code}")
+            return None
     except requests.exceptions.RequestException as e:
         print(f"웹페이지를 가져오는 중 오류 발생: {e}")
         return None
@@ -31,6 +34,10 @@ def getdata():
     soup = BeautifulSoup(html_doc, 'html.parser')
 
     wlist = soup.select_one("#mabinogim > div.news.board_list.container > section.normal_list_wrap > div.list_area")
+
+    if not wlist:
+        print("ERROR: 웹페이지 파싱 중 오류 발생")
+        return None
 
     titletags = wlist.find_all('a', class_='title')
 
