@@ -4,7 +4,7 @@ import json
 import os
 
 webhook = '' #Discord webhook 주소
-#webhook = os.environ.get('DISCORD_WEBHOOK') #Github Actions를 위한 변수, 로컬에서 사용시 이 라인은 지울것
+webhook = os.environ.get('DISCORD_WEBHOOK') #Github Actions를 위한 변수, 로컬에서 사용시 이 라인은 지울것
 mmhome = 'https://mabinogimobile.nexon.com/News/Notice?headlineId=0'
 BASE_DETAIL_URL = "https://mabinogimobile.nexon.com/News/Notice/"
 savefile = r'alert_log.txt'
