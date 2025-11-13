@@ -37,6 +37,7 @@ def getdata():
 
     if not wlist:
         print("ERROR: 웹페이지 파싱 중 오류 발생")
+        print(html_doc)
         return None
 
     titletags = wlist.find_all('a', class_='title')
