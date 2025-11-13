@@ -61,11 +61,10 @@ def getdata():
             if tag['class'] != 'title new':
                 continue
             
-            list_item = tag.find_parent('li')
-            thread_id = list_item.get('data-threadid') if list_item else None
-            if not thread_id:
-                continue
-            if ids.find(thread_id) != -1:
+            thread_id = tag.attrs['onclick']
+            if thread_id.find('Thread.link(') != -1:
+                thread_id = thread_id.split('Thread.link(')[1].split(',')[0]
+            else:
                 continue
 
             turl = ""
